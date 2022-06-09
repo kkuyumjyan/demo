@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - dev
+
+name: Deploy to Development
+
+jobs:
+  deploy:
+    name: Deploy to Staging
+    uses: example-co/demo-api/.github/workflows/deploy.yaml@dev
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    with:
+      terraform-workspace: development
+
+

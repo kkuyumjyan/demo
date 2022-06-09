@@ -1,0 +1,19 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Deploy to Staging
+
+jobs:
+  deploy:
+    name: Deploy to Staging
+    uses: example-co/demo-api/.github/workflows/deploy.yaml@main
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    with:
+      terraform-workspace: staging
+      image-tag: stage-${{ github.sha }}
+
+

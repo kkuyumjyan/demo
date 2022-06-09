@@ -1,0 +1,22 @@
+global:
+  app_name: "demo-api"
+  env: "development"
+  namespace: "example-co"
+  image:
+    repository: "12345789.dkr.ecr.eu-central-1.amazonaws.com"
+    image_name: "demo-api-k8s-repo"
+    tag: "latest"
+  resources:
+    cpu_request: "500m"
+    cpu_limit: "1000m"
+    memory_request: "2G"
+    memory_limit: "3G"
+  ports:
+    port: "3000"
+    targetport: "3000"
+  ingress:
+    host: "dev.example-co.tv"
+    path: /demo-api/(/|$)(.*)
+    pathType: Prefix
+
+applicationVariables: {}

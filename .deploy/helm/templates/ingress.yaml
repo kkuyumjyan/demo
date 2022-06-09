@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  namespace: "{{ .Values.global.namespace }}"
+  name: {{ .Values.global.app_name }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    kubernetes.io/ingress.class: "nginx"
+    ingressClassName: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+    - host: {{ .Values.global.ingress.host }}
+      http:
+        paths:
+          - backend:
+              serviceName: {{ .Values.global.app_name }}-service
+              servicePort: {{ .Values.global.ports.port }}
+            path: {{ .Values.global.ingress.path }}

@@ -1,0 +1,16 @@
+on:
+  release:
+    types: [ published ]
+
+name: Deploy to Production
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    uses: example-co/demo-api/.github/workflows/deploy.yaml@main
+    secrets:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    with:
+      terraform-workspace: production
+      image-tag: ${{github.ref_name}}

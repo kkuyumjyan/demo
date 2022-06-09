@@ -1,0 +1,83 @@
+name: Generic deploy workflow
+
+on:
+  workflow_call:
+    secrets:
+      aws-access-key-id:
+        description: 'AWS access key'
+        required: true
+      aws-secret-access-key:
+        description: 'AWS secret access key'
+        required: true
+    inputs:
+      aws-region:
+        description: 'AWS region'
+        required: false
+        default: eu-central-1
+        type: string
+      terraform-workspace:
+        description: 'Terraform workspace name'
+        required: false
+        default: default
+        type: string
+      ecr-repository:
+        description: 'ECR repository name'
+        required: false
+        default: triggers-k8s-repo
+        type: string
+      image-tag:
+        description: 'Docker image tag name'
+        required: false
+        default: ${{ github.sha }}
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        run: |
+          # Build a docker image and
+          # push it to ECR so that it can
+          # be deployed to EKS.
+          docker build --tag ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }} --tag ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:latest .
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }} -a
+          echo "::set-output name=image::${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ inputs.image-tag }}"
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws-access-key-id }}
+          aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: .deploy
+
+      - name: Terraform Workspace
+        id: workspace
+        run: terraform workspace select ${{ inputs.terraform-workspace }}
+        working-directory: .deploy
+
+      - name: Terraform Apply
+        run: terraform apply -var "image_tag=${{ inputs.image-tag }}" -auto-approve
+        working-directory: .deploy
